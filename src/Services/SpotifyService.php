@@ -62,6 +62,11 @@ class SpotifyService
         return is_array($value) ? implode(',', $value) : $value;
     }
 
+    protected function normalizeToArray(string|array $value): array
+    {
+        return is_array($value) ? $value : explode(',', $value);
+    }
+
     /**
      * Make an HTTP request to the Spotify API.
      *
@@ -521,6 +526,21 @@ class SpotifyService
         return $this->makeRequest('get', '/me/player/queue');
     }
 
+    public function resumePlayback(string $deviceId, string|array|null $trackIds = null): Response
+    {
+        return $this->makeRequest('put', '/me/player/play', [
+            'device_id' => $deviceId,
+            'uris' => $trackIds ? $this->formatForTracksPlayback($trackIds) : null,
+        ]);
+    }
+
+    public function pausePlayback(string $deviceId): Response
+    {
+        return $this->makeRequest('put', '/me/player/pause', [
+            'device_id' => $deviceId,
+        ]);
+    }
+
     // Playlists
 
     /**
@@ -894,5 +914,10 @@ class SpotifyService
     public function getAuthenticatedUser(): Response
     {
         return $this->getCurrentUsersProfile();
+    }
+
+    protected function formatForTracksPlayback(string|array $trackIds): array
+    {
+        return collect($this->normalizeToArray($trackIds))->map(fn ($track) => 'spotify:track:'.$track)->toArray();
     }
 }
